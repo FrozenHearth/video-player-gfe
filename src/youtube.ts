@@ -82,7 +82,7 @@ export type YouTubeNamespace = {
 
 declare global {
   interface Window {
-    Youtube?: YouTubeNamespace;
+    YT?: YouTubeNamespace;
     onYouTubeIframeAPIReady?: () => void;
   }
 }

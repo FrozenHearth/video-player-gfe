@@ -10,6 +10,8 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
   const playerBox = useRef<HTMLDivElement>(null);
   const player = useRef<YouTubePlayer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentVolume, setCurrentVolume] = useState(50);
   const [showPoster, setShowPoster] = useState(true);
 
   function togglePlay() {
@@ -17,19 +19,43 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
       return;
     }
 
-    if (player.current.getPlayerState() === PlayerState.PLAYING) {
-      player.current.pauseVideo();
+    if (player.current?.getPlayerState() === PlayerState.PLAYING) {
+      player.current?.pauseVideo();
     } else {
-      player.current.playVideo();
+      player.current?.playVideo();
     }
   }
 
+  function toggleMute() {
+    if (player.current?.isMuted()) {
+      player.current?.unMute();
+      setIsMuted(false);
+      setCurrentVolume(player.current?.getVolume() ?? 50);
+    } else {
+      player.current?.mute();
+      setCurrentVolume(0);
+      setIsMuted(true);
+    }
+  }
+
+  useEffect(() => {
+    if (currentVolume === 0) {
+      setIsMuted(true);
+    }
+  }, [currentVolume]);
+
+  function handleVolumeChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const volume = parseInt(event.target.value);
+    player.current?.setVolume(volume);
+    setCurrentVolume(volume);
+  }
+
   function createVideoPlayer() {
-    if (!playerBox.current || !window.Youtube) {
+    if (!playerBox.current || !window.YT) {
       return;
     }
 
-    player.current = new window.Youtube.Player(playerBox.current, {
+    player.current = new window.YT.Player(playerBox.current, {
       videoId,
       width: "100%",
       height: "100%",
@@ -40,10 +66,10 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
       events: {
         onReady: (event) => {
           event.target.setVolume(50);
+          setCurrentVolume(50);
         },
         onStateChange: (event) => {
           setIsPlaying(event.data === PlayerState.PLAYING);
-
           if (event.data === PlayerState.PLAYING) {
             setShowPoster(false);
           }
@@ -53,7 +79,7 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
   }
 
   useEffect(() => {
-    if (window.Youtube) {
+    if (window.YT) {
       createVideoPlayer();
     } else {
       window.onYouTubeIframeAPIReady = createVideoPlayer;
@@ -79,8 +105,13 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
       <div className="absolute inset-0" onClick={togglePlay}>
         <PlayerControls
           isPlaying={isPlaying}
+          isMuted={isMuted}
           onPlay={togglePlay}
           onPause={togglePlay}
+          onMute={toggleMute}
+          onUnmute={toggleMute}
+          currentVolume={currentVolume}
+          handleVolumeChange={handleVolumeChange}
         />
       </div>
     </section>

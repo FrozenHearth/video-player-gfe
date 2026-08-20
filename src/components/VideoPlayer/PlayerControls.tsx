@@ -7,17 +7,28 @@ import {
   RiSettings3Line,
   RiSkipBackFill,
   RiSkipForwardFill,
+  RiVolumeDownFill,
   RiVolumeMuteFill,
 } from "react-icons/ri";
 
 export default function PlayerControls({
   isPlaying,
+  isMuted,
+  currentVolume,
   onPlay,
   onPause,
+  onMute,
+  onUnmute,
+  handleVolumeChange,
 }: {
   isPlaying: boolean;
+  isMuted: boolean;
+  currentVolume?: number;
   onPlay: () => void;
   onPause: () => void;
+  onMute: () => void;
+  onUnmute: () => void;
+  handleVolumeChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <section
@@ -52,7 +63,38 @@ export default function PlayerControls({
           </div>
         </aside>
         <div className="flex pr-4">
-          <RiVolumeMuteFill className="h-4.5 w-4.5 text-white" />
+          {isMuted || currentVolume === 0 ? (
+            <button
+              type="button"
+              className="cursor-pointer"
+              onClick={isMuted ? onUnmute : onMute}
+            >
+              <RiVolumeMuteFill className="h-4.5 w-4.5 text-white" />
+            </button>
+          ) : (
+            <section className="flex items-center gap-2">
+              <button
+                type="button"
+                className="cursor-pointer peer"
+                onClick={onUnmute}
+              >
+                <RiVolumeDownFill className="h-4.5 w-4.5 text-white" />
+              </button>
+              <input
+                type="range"
+                id="volume"
+                name="volume"
+                min="0"
+                max="100"
+                value={currentVolume}
+                onChange={handleVolumeChange}
+                className="h-3 w-12 cursor-pointer appearance-none rounded-full bg-transparent [&::-webkit-slider-thumb]:size-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-black [&::-moz-range-thumb]:size-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-black"
+                style={{
+                  background: `linear-gradient(to right, white ${currentVolume ?? 50}%, #e5e7eb ${currentVolume ?? 50}%) no-repeat center / 100% 2px`,
+                }}
+              />
+            </section>
+          )}
         </div>
         <div className="flex h-4.5 grow items-center">
           <span className="text-xs font-medium text-white">1:48 / 3:24</span>
