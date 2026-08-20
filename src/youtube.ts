@@ -28,6 +28,11 @@ export type PlayerVars = {
   playsinline?: 0 | 1;
 };
 
+export type CaptionTrack = {
+  languageCode: string;
+  languageName: string;
+};
+
 export type PlayerEvent<T = unknown> = {
   target: YouTubePlayer;
   data: T;
@@ -68,6 +73,8 @@ export type YouTubePlayer = {
   getOptions: (module?: string) => string[];
   getOption: (module: string, option: string) => unknown;
   setOption: (module: string, option: string, value: unknown) => void;
+  loadModule: (moduleName: string) => void;
+  unloadModule: (moduleName: string) => void;
   getIframe: () => HTMLIFrameElement;
   destroy: () => void;
 };
