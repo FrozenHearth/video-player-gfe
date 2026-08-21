@@ -1,4 +1,4 @@
-import PlayerControls from "./PlayerControls";
+import PlayerControls from "./controls/PlayerControls";
 import { useYouTubePlayer } from "./useYouTubePlayer";
 
 type VideoPlayerProps = {

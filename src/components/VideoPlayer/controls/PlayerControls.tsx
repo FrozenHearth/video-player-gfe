@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   RiClosedCaptioningFill,
   RiClosedCaptioningLine,
@@ -5,7 +6,6 @@ import {
   RiPauseFill,
   RiPictureInPictureFill,
   RiPlayFill,
-  RiSettings3Line,
   RiSkipBackFill,
   RiSkipForwardFill,
   RiVolumeDownFill,
@@ -16,6 +16,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import PlayerSettings from "./PlayerSettings";
 
 type PlayerControlsProps = {
   isPlaying: boolean;
@@ -38,8 +39,11 @@ export default function PlayerControls({
   onToggleCaptions,
   onVolumeChange,
 }: PlayerControlsProps) {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   return (
     <section
+      data-settings-open={isSettingsOpen}
       className="absolute inset-x-0 bottom-0 flex h-11 flex-col items-end bg-linear-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100"
       onClick={(event) => event.stopPropagation()}
     >
@@ -116,7 +120,7 @@ export default function PlayerControls({
             </Tooltip>
           </div>
           <div className="flex items-center justify-center gap-2 rounded">
-            <RiSettings3Line className="h-4.5 w-4.5 text-white" />
+            <PlayerSettings onOpenChange={setIsSettingsOpen} />
           </div>
           <div className="flex items-center justify-center gap-2 rounded">
             <RiPictureInPictureFill className="h-4.5 w-4.5 text-white" />
