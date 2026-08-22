@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import PlayerSettings from "./PlayerSettings";
+import { cn } from "@/lib/utils";
 
 type PlayerControlsProps = {
   isPlaying: boolean;
@@ -43,8 +44,10 @@ export default function PlayerControls({
 
   return (
     <section
-      data-settings-open={isSettingsOpen}
-      className="absolute inset-x-0 bottom-0 flex h-11 flex-col items-end bg-linear-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100"
+      className={cn(
+        "absolute inset-x-0 bottom-0 flex h-11 flex-col items-end bg-linear-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100",
+        isSettingsOpen && "opacity-100",
+      )}
       onClick={(event) => event.stopPropagation()}
     >
       <div className="flex items-center self-stretch bg-indigo-50">

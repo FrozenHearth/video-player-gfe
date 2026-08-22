@@ -1,27 +1,31 @@
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import {
-  RiArrowRightSLine,
-  RiHdLine,
-  RiPlayCircleLine,
-  RiSettings3Line,
-} from "react-icons/ri";
+import { RiSettings3Line } from "react-icons/ri";
+import SettingsMainPanel from "./settings/SettingsMainPanel";
+import SubtitlesPanel from "./settings/SubtitlesPanel";
+import PlaybackSpeedPanel from "./settings/PlaybackSpeedPanel";
+import QualityPanel from "./settings/QualityPanel";
+import type { SettingsPanel } from "./settings/types";
 
 type PlayerSettingsProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-export default function PlayerSettings({
-  onOpenChange,
-}: PlayerSettingsProps) {
+export default function PlayerSettings({ onOpenChange }: PlayerSettingsProps) {
+  const [activePanel, setActivePanel] = useState<SettingsPanel>("main");
+
+  function handleOpenChange(open: boolean) {
+    onOpenChange(open);
+    if (!open) setActivePanel("main");
+  }
+
   return (
-    <DropdownMenu onOpenChange={onOpenChange}>
+    <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger
         render={
           <Button className="cursor-pointer bg-transparent!">
@@ -30,45 +34,23 @@ export default function PlayerSettings({
         }
       />
       <DropdownMenuContent
-        className="w-80"
+        className={activePanel === "main" ? "w-80" : "w-64"}
         align="center"
         side="top"
         sideOffset={-44}
       >
-        <DropdownMenuGroup>
-          <DropdownMenuItem className="flex w-full justify-between gap-4 px-3.5 py-3.5">
-            <span className="flex items-center gap-3">
-              <RiPlayCircleLine className="h-5! w-5!" />
-              <span className="text-sm text-neutral-900">Subtitles/CC</span>
-            </span>
-            <span className="flex shrink-0 items-center gap-3">
-              <span className="text-sm text-neutral-500">Auto generated</span>
-              <RiArrowRightSLine className="h-5! w-5! text-neutral-700" />
-            </span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem className="flex w-full justify-between gap-4 px-3.5 py-3.5">
-            <span className="flex items-center gap-3">
-              <RiPlayCircleLine className="h-5! w-5!" />
-              <span className="text-sm text-neutral-900">Playback speed</span>
-            </span>
-            <span className="flex shrink-0 items-center gap-3">
-              <span className="text-sm text-neutral-500">Normal</span>
-              <RiArrowRightSLine className="h-5! w-5! text-neutral-700" />
-            </span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem className="flex w-full justify-between gap-4 px-3.5 py-3.5">
-            <span className="flex items-center gap-3">
-              <RiHdLine className="h-5! w-5!" />
-              <span className="text-sm text-neutral-900">Quality</span>
-            </span>
-            <span className="flex shrink-0 items-center gap-3">
-              <span className="text-sm text-neutral-500">1440p</span>
-              <RiArrowRightSLine className="h-5! w-5! text-neutral-700" />
-            </span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        {activePanel === "main" ? (
+          <SettingsMainPanel onSelectPanel={setActivePanel} />
+        ) : null}
+        {activePanel === "subtitles" ? (
+          <SubtitlesPanel onBack={() => setActivePanel("main")} />
+        ) : null}
+        {activePanel === "playback-speed" ? (
+          <PlaybackSpeedPanel onBack={() => setActivePanel("main")} />
+        ) : null}
+        {activePanel === "quality" ? (
+          <QualityPanel onBack={() => setActivePanel("main")} />
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
