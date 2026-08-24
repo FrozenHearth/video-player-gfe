@@ -11,6 +11,8 @@ import {
   RiVolumeDownFill,
   RiVolumeMuteFill,
 } from "react-icons/ri";
+import dayjs from "dayjs";
+import duration from "dayjs/plugin/duration";
 import {
   Tooltip,
   TooltipContent,
@@ -19,6 +21,25 @@ import {
 import PlayerSettings from "./PlayerSettings";
 import { cn } from "@/lib/utils";
 import type { CaptionTrack } from "../../../youtube";
+import { PlayerSlider } from "./slider/PlayerSlider";
+
+dayjs.extend(duration);
+
+function formatPlayerTime(
+  seconds: number,
+  rounding: "floor" | "round" = "floor",
+) {
+  const safeSeconds = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+  const displaySeconds =
+    rounding === "round" ? Math.round(safeSeconds) : Math.floor(safeSeconds);
+  const time = dayjs.duration(displaySeconds, "seconds");
+
+  if (time.asHours() >= 1) {
+    return time.format("H:mm:ss");
+  }
+
+  return time.format("m:ss");
+}
 
 type PlayerControlsProps = {
   isPlaying: boolean;
@@ -27,11 +48,15 @@ type PlayerControlsProps = {
   captionTracks: CaptionTrack[];
   selectedCaptionTrack: CaptionTrack | null;
   volume: number;
+  currentTime: number;
+  duration: number;
   onTogglePlay: () => void;
   onToggleMute: () => void;
   onToggleCaptions: () => void;
   onSelectCaptionTrack: (track: CaptionTrack | null) => void;
   onVolumeChange: (volume: number) => void;
+  onSeek: (seconds: number) => void;
+  onSeekEnd: () => void;
 };
 
 export default function PlayerControls({
@@ -41,24 +66,35 @@ export default function PlayerControls({
   captionTracks,
   selectedCaptionTrack,
   volume,
+  currentTime,
+  duration,
   onTogglePlay,
   onToggleMute,
   onToggleCaptions,
   onSelectCaptionTrack,
   onVolumeChange,
+  onSeek,
+  onSeekEnd,
 }: PlayerControlsProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const formattedCurrentTime = formatPlayerTime(currentTime);
+  const formattedDuration = formatPlayerTime(duration, "round");
 
   return (
     <section
       className={cn(
-        "absolute inset-x-0 bottom-0 flex h-11 flex-col items-end bg-linear-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100",
+        "absolute inset-x-0 bottom-0 z-10 flex h-11 opacity-100 flex-col items-end bg-linear-to-t from-black/70 to-transparent group-hover:opacity-100",
         isSettingsOpen && "opacity-100",
       )}
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="flex items-center self-stretch bg-indigo-50">
-        <div className="h-1 w-25 bg-indigo-700"></div>
+      <div className="relative z-20 w-full">
+        <PlayerSlider
+          currentTime={currentTime}
+          totalTime={duration}
+          onSeek={onSeek}
+          onSeekEnd={onSeekEnd}
+        />
       </div>
       <footer className="flex h-full w-full items-center px-4">
         <aside className="flex gap-1.5 pr-4">
@@ -107,8 +143,15 @@ export default function PlayerControls({
           />
         </div>
 
-        <div className="flex h-4.5 grow items-center">
-          <span className="text-xs font-medium text-white">1:48 / 3:24</span>
+        <div className="flex h-4 grow items-center justify-start font-['Noto_Sans'] text-xs font-medium leading-4 tabular-nums text-white">
+          <span
+            className="inline-block text-right"
+            style={{ minWidth: `${formattedDuration.length}ch` }}
+          >
+            {formattedCurrentTime}
+          </span>
+          <span className="px-1">/</span>
+          <span>{formattedDuration}</span>
         </div>
         <aside className="flex gap-2">
           <div className="flex items-center justify-center gap-2 rounded">

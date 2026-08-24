@@ -71,6 +71,7 @@ function createPlayer(
     events: {
       onReady: ({ target }) => {
         target.setVolume(DEFAULT_VOLUME);
+        onPlaybackChange(target, false);
       },
       onApiChange: ({ target }) => {
         const tracks = getCaptionTracks(target);
@@ -106,7 +107,40 @@ export function useYouTubePlayer(videoId: string) {
     useState<CaptionTrack | null>(null);
   const [volume, setVolume] = useState(DEFAULT_VOLUME);
   const [hasStarted, setHasStarted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const hasSyncedDefaultCaption = useRef(false);
+  const isScrubbing = useRef(false);
+  const seekTarget = useRef<number | null>(null);
+
+  function syncPlaybackTime(ytPlayer: YouTubePlayer | null) {
+    if (!ytPlayer || isScrubbing.current) {
+      return;
+    }
+
+    const nextDuration = ytPlayer.getDuration();
+    if (nextDuration) {
+      setDuration(nextDuration);
+    }
+
+    if (ytPlayer.getPlayerState() === PlayerState.ENDED) {
+      seekTarget.current = null;
+      setCurrentTime(nextDuration);
+      return;
+    }
+
+    const playerTime = ytPlayer.getCurrentTime();
+
+    if (
+      seekTarget.current != null &&
+      Math.abs(playerTime - seekTarget.current) > 1
+    ) {
+      return;
+    }
+
+    seekTarget.current = null;
+    setCurrentTime(playerTime);
+  }
 
   function togglePlay() {
     if (!player.current) {
@@ -133,6 +167,28 @@ export function useYouTubePlayer(videoId: string) {
       player.current.mute();
       setIsMuted(true);
     }
+  }
+
+  function seekTo(seconds: number) {
+    if (!player.current) {
+      return;
+    }
+
+    const videoDuration = player.current.getDuration();
+    let nextTime = Math.max(0, seconds);
+
+    if (videoDuration > 0) {
+      nextTime = Math.min(nextTime, Math.max(0, videoDuration - 0.25));
+    }
+
+    seekTarget.current = nextTime;
+    isScrubbing.current = true;
+    player.current.seekTo(nextTime, true);
+    setCurrentTime(nextTime);
+  }
+
+  function stopSeeking() {
+    isScrubbing.current = false;
   }
 
   function changeVolume(value: number) {
@@ -200,13 +256,16 @@ export function useYouTubePlayer(videoId: string) {
     if (!element) return;
 
     hasSyncedDefaultCaption.current = false;
+    setCurrentTime(0);
+    setDuration(0);
 
     const startPlayer = () => {
       player.current = createPlayer(
         element,
         videoId,
-        (_, playing) => {
+        (target, playing) => {
           setIsPlaying(playing);
+          syncPlaybackTime(target);
           if (playing) {
             setHasStarted(true);
           }
@@ -236,6 +295,20 @@ export function useYouTubePlayer(videoId: string) {
     };
   }, [videoId]);
 
+  useEffect(() => {
+    if (!isPlaying) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      syncPlaybackTime(player.current);
+    }, 250);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isPlaying]);
+
   return {
     playerElement,
     isPlaying,
@@ -245,10 +318,14 @@ export function useYouTubePlayer(videoId: string) {
     selectedCaptionTrack,
     volume,
     hasStarted,
+    currentTime,
+    duration,
     togglePlay,
     toggleMute,
     toggleCaptions,
     selectCaptionTrack,
     changeVolume,
+    seekTo,
+    stopSeeking,
   };
 }
