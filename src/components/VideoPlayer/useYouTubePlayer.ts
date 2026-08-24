@@ -12,12 +12,51 @@ type PlaybackChangeHandler = (
   isPlaying: boolean,
 ) => void;
 
+function getCaptionTracks(player: YouTubePlayer) {
+  const tracklist = player.getOption("captions", "tracklist");
+
+  if (!Array.isArray(tracklist)) {
+    return [];
+  }
+
+  const tracks: CaptionTrack[] = [];
+
+  for (const item of tracklist) {
+    if (!item || !item.languageCode) {
+      continue;
+    }
+
+    tracks.push({
+      languageCode: item.languageCode,
+      languageName: item.languageName || item.languageCode,
+    });
+  }
+
+  return tracks;
+}
+
+function getDefaultCaptionTrack(tracks: CaptionTrack[]) {
+  const englishTrack = tracks.find((track) => {
+    return track.languageCode.startsWith("en");
+  });
+
+  if (englishTrack) {
+    return englishTrack;
+  }
+
+  return tracks[0];
+}
+
 function createPlayer(
   element: HTMLDivElement,
   videoId: string,
   onPlaybackChange: PlaybackChangeHandler,
+  onCaptionTracksChange: (
+    tracks: CaptionTrack[],
+    currentTrack: CaptionTrack | null,
+  ) => void,
 ) {
-  let captionsInitialized = false;
+  let captionsModuleLoaded = false;
 
   return new window.YT!.Player(element, {
     videoId,
@@ -33,14 +72,22 @@ function createPlayer(
       onReady: ({ target }) => {
         target.setVolume(DEFAULT_VOLUME);
       },
+      onApiChange: ({ target }) => {
+        const tracks = getCaptionTracks(target);
+
+        if (!tracks.length) {
+          return;
+        }
+
+        onCaptionTracksChange(tracks, getDefaultCaptionTrack(tracks));
+      },
       onStateChange: ({ target, data }) => {
         const isPlaying = data === PlayerState.PLAYING;
         onPlaybackChange(target, isPlaying);
 
-        if (isPlaying && !captionsInitialized) {
+        if (isPlaying && !captionsModuleLoaded) {
           target.loadModule("captions");
-          target.setOption("captions", "track", {});
-          captionsInitialized = true;
+          captionsModuleLoaded = true;
         }
       },
     },
@@ -54,8 +101,12 @@ export function useYouTubePlayer(videoId: string) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [captionsOn, setCaptionsOn] = useState(false);
+  const [captionTracks, setCaptionTracks] = useState<CaptionTrack[]>([]);
+  const [selectedCaptionTrack, setSelectedCaptionTrack] =
+    useState<CaptionTrack | null>(null);
   const [volume, setVolume] = useState(DEFAULT_VOLUME);
   const [hasStarted, setHasStarted] = useState(false);
+  const hasSyncedDefaultCaption = useRef(false);
 
   function togglePlay() {
     if (!player.current) {
@@ -101,50 +152,77 @@ export function useYouTubePlayer(videoId: string) {
     }
   }
 
-  function toggleCaptions() {
+  function selectCaptionTrack(track: CaptionTrack | null) {
     if (!player.current) {
       return;
     }
 
-    if (captionsOn) {
+    if (!track) {
       player.current.setOption("captions", "track", {});
+      setSelectedCaptionTrack(null);
       setCaptionsOn(false);
       return;
     }
 
-    const tracks = player.current.getOption(
-      "captions",
-      "tracklist",
-    ) as CaptionTrack[];
+    player.current.setOption("captions", "track", track);
+    player.current.setOption("captions", "reload", true);
+    setSelectedCaptionTrack(track);
+    setCaptionsOn(true);
+  }
 
-    if (!tracks) {
+  function toggleCaptions() {
+    if (captionsOn) {
+      selectCaptionTrack(null);
       return;
     }
 
-    const englishTrack = tracks.find((track) => {
+    if (selectedCaptionTrack) {
+      selectCaptionTrack(selectedCaptionTrack);
+      return;
+    }
+
+    const englishTrack = captionTracks.find((track) => {
       return track.languageCode.startsWith("en");
     });
 
-    if (!englishTrack) {
+    if (englishTrack) {
+      selectCaptionTrack(englishTrack);
       return;
     }
 
-    player.current.setOption("captions", "track", englishTrack);
-    player.current.setOption("captions", "reload", true);
-    setCaptionsOn(true);
+    if (captionTracks[0]) {
+      selectCaptionTrack(captionTracks[0]);
+    }
   }
 
   useEffect(() => {
     const element = playerElement.current;
     if (!element) return;
 
+    hasSyncedDefaultCaption.current = false;
+
     const startPlayer = () => {
-      player.current = createPlayer(element, videoId, (_, playing) => {
-        setIsPlaying(playing);
-        if (playing) {
-          setHasStarted(true);
-        }
-      });
+      player.current = createPlayer(
+        element,
+        videoId,
+        (_, playing) => {
+          setIsPlaying(playing);
+          if (playing) {
+            setHasStarted(true);
+          }
+        },
+        (tracks, currentTrack) => {
+          setCaptionTracks(tracks);
+
+          if (hasSyncedDefaultCaption.current || !currentTrack) {
+            return;
+          }
+
+          hasSyncedDefaultCaption.current = true;
+          setSelectedCaptionTrack(currentTrack);
+          setCaptionsOn(true);
+        },
+      );
     };
 
     if (window.YT) {
@@ -163,11 +241,14 @@ export function useYouTubePlayer(videoId: string) {
     isPlaying,
     isMuted,
     captionsOn,
+    captionTracks,
+    selectedCaptionTrack,
     volume,
     hasStarted,
     togglePlay,
     toggleMute,
     toggleCaptions,
+    selectCaptionTrack,
     changeVolume,
   };
 }

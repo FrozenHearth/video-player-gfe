@@ -11,11 +11,14 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
     isPlaying,
     isMuted,
     captionsOn,
+    captionTracks,
+    selectedCaptionTrack,
     volume,
     hasStarted,
     togglePlay,
     toggleMute,
     toggleCaptions,
+    selectCaptionTrack,
     changeVolume,
   } = useYouTubePlayer(videoId);
 
@@ -34,10 +37,13 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
           isPlaying={isPlaying}
           isMuted={isMuted}
           captionsOn={captionsOn}
+          captionTracks={captionTracks}
+          selectedCaptionTrack={selectedCaptionTrack}
           volume={volume}
           onTogglePlay={togglePlay}
           onToggleMute={toggleMute}
           onToggleCaptions={toggleCaptions}
+          onSelectCaptionTrack={selectCaptionTrack}
           onVolumeChange={changeVolume}
         />
       </div>

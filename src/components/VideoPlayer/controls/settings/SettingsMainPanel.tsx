@@ -4,14 +4,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RiArrowRightSLine, RiHdLine, RiPlayCircleLine } from "react-icons/ri";
 import type { SettingsPanel } from "./types";
+import type { CaptionTrack } from "../../../../youtube";
 
 type SettingsMainPanelProps = {
+  selectedCaptionTrack: CaptionTrack | null;
   onSelectPanel: (panel: SettingsPanel) => void;
 };
 
 export default function SettingsMainPanel({
+  selectedCaptionTrack,
   onSelectPanel,
 }: SettingsMainPanelProps) {
+  const selectedCaptionLabel = selectedCaptionTrack
+    ? selectedCaptionTrack.languageName
+    : "Off";
+
   return (
     <DropdownMenuGroup>
       <DropdownMenuItem
@@ -24,7 +31,7 @@ export default function SettingsMainPanel({
           <span className="text-sm text-neutral-900">Subtitles/CC</span>
         </span>
         <span className="flex shrink-0 items-center gap-3">
-          <span className="text-sm text-neutral-500">Auto generated</span>
+          <span className="text-sm text-neutral-500">{selectedCaptionLabel}</span>
           <RiArrowRightSLine className="h-5! w-5! text-neutral-700" />
         </span>
       </DropdownMenuItem>

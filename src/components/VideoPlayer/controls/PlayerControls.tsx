@@ -18,15 +18,19 @@ import {
 } from "@/components/ui/tooltip";
 import PlayerSettings from "./PlayerSettings";
 import { cn } from "@/lib/utils";
+import type { CaptionTrack } from "../../../youtube";
 
 type PlayerControlsProps = {
   isPlaying: boolean;
   isMuted: boolean;
   captionsOn: boolean;
+  captionTracks: CaptionTrack[];
+  selectedCaptionTrack: CaptionTrack | null;
   volume: number;
   onTogglePlay: () => void;
   onToggleMute: () => void;
   onToggleCaptions: () => void;
+  onSelectCaptionTrack: (track: CaptionTrack | null) => void;
   onVolumeChange: (volume: number) => void;
 };
 
@@ -34,10 +38,13 @@ export default function PlayerControls({
   isPlaying,
   isMuted,
   captionsOn,
+  captionTracks,
+  selectedCaptionTrack,
   volume,
   onTogglePlay,
   onToggleMute,
   onToggleCaptions,
+  onSelectCaptionTrack,
   onVolumeChange,
 }: PlayerControlsProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -123,7 +130,12 @@ export default function PlayerControls({
             </Tooltip>
           </div>
           <div className="flex items-center justify-center gap-2 rounded">
-            <PlayerSettings onOpenChange={setIsSettingsOpen} />
+            <PlayerSettings
+              captionTracks={captionTracks}
+              selectedCaptionTrack={selectedCaptionTrack}
+              onSelectCaptionTrack={onSelectCaptionTrack}
+              onOpenChange={setIsSettingsOpen}
+            />
           </div>
           <div className="flex items-center justify-center gap-2 rounded">
             <RiPictureInPictureFill className="h-4.5 w-4.5 text-white" />
